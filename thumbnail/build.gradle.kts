@@ -1,12 +1,12 @@
 plugins {
     kotlin("jvm") version "2.1.20"
+    `maven-publish`
 }
 
-group = "com.laomou.thumbnailator"
+group = "com.github.laomou"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
 
@@ -20,4 +20,17 @@ tasks.test {
 
 kotlin {
     jvmToolchain(8)
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+    }
 }
