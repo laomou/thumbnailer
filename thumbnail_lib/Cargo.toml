@@ -1,0 +1,12 @@
+[package]
+name = "thumbnail-lib"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "thumbnail_lib"
+crate-type = ["cdylib"]
+
+[dependencies]
+image = { version = "0.24", features = ["jpeg", "png"] }
+jni = { version = "0.21", features = ["invocation"] }
