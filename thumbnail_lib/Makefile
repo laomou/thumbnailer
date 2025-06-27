@@ -1,6 +1,6 @@
 RUST_TARGET_LINUX := x86_64-unknown-linux-gnu
 RUST_TARGET_WIN := x86_64-pc-windows-gnu
-RESOURCE_DIR := ../thumbnail/src/main/resources/
+RESOURCE_DIR := ../thumbnail/
 
 all: linux windows copy_resources
 
@@ -14,11 +14,11 @@ windows:
 
 copy_resources:
 	@echo "Copying native libraries to resources..."
-	@mkdir -p $(RESOURCE_DIR)/native/linux $(RESOURCE_DIR)/native/windows
+	@mkdir -p $(RESOURCE_DIR)/libs/linux $(RESOURCE_DIR)/libs/windows
 	
-	@cp target/$(RUST_TARGET_LINUX)/release/lib*.so $(RESOURCE_DIR)/native/linux/ || true
+	@cp target/$(RUST_TARGET_LINUX)/release/lib*.so $(RESOURCE_DIR)/libs/linux/ || true
 	
-	@cp target/$(RUST_TARGET_WIN)/release/*.dll $(RESOURCE_DIR)/native/windows/ || true
+	@cp target/$(RUST_TARGET_WIN)/release/*.dll $(RESOURCE_DIR)/libs/windows/ || true
 	
 	@echo "Copied files:"
 	@ls -l $(RESOURCE_DIR)/*

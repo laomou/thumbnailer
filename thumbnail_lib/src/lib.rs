@@ -9,7 +9,7 @@ mod thumbnail;
 use thumbnail::generate_thumbnail_rgba;
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_github_laomou_thumbnailator_generateThumbnail(
+pub extern "system" fn Java_com_laomou_thumbnailator_Native_generateThumbnail(
     mut env: JNIEnv,
     _class: JClass,
     input_path: JString,
@@ -38,5 +38,5 @@ pub extern "system" fn Java_com_github_laomou_thumbnailator_generateThumbnail(
         )
     }.expect("JNIEnv#new_object_unchecked should return JValue");
 
-    return *val;
+    return val.into_raw();
 }

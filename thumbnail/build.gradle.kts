@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.laomou"
+group = "com.laomou"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -26,6 +26,18 @@ java {
     withSourcesJar()
     withJavadocJar()
 }
+
+tasks.processResources {
+    from("src/main/resources")
+
+    from("libs") {
+        into("META-INF/lib")
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    fileMode = 775
+}
+
 
 publishing {
     publications {
