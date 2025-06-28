@@ -1,52 +1,121 @@
 package com.laomou.thumbnailator
 
+import com.laomou.thumbnailator.tasks.SourceSinkThumbnailTask
+import com.laomou.thumbnailator.tasks.io.BufferedImageSink
+import com.laomou.thumbnailator.tasks.io.FileImageSource
+import com.laomou.thumbnailator.tasks.io.ImageSource
+import java.awt.Dimension
 import java.awt.image.BufferedImage
 import java.io.File
-import javax.swing.Icon
-import javax.swing.ImageIcon
 
-class Thumbnails private constructor(private val file: File) {
-    private var width = 100
-    private var height = 100
-    private var keepAspect = true
+
+class Thumbnails {
 
     companion object {
-        fun of(file: File): Thumbnails = Thumbnails(file)
-    }
+        fun of(vararg files: String): Builder<File> {
+            return Builder.ofStrings(files.asIterable())
+        }
 
-    fun size(w: Int, h: Int) = apply {
-        width = w
-        height = h
-    }
-
-    fun keepAspectRatio(enable: Boolean) = apply {
-        keepAspect = enable
-    }
-
-    fun toBufferedImage(): BufferedImage {
-        return Native.generateThumbnail(file.path, width, height).toBufferedImage()
-    }
-
-    fun toIcon(): Icon {
-        return ImageIcon(toBufferedImage())
-    }
-}
-
-fun ImageThumbnail.toBufferedImage(): BufferedImage {
-    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            val offset = (y * width + x) * 4
-            val argb = (
-                    (rgbaData[offset + 3].toInt() and 0xFF shl 24) or
-                            (rgbaData[offset].toInt() and 0xFF shl 16) or
-                            (rgbaData[offset + 1].toInt() and 0xFF shl 8) or
-                            (rgbaData[offset + 2].toInt() and 0xFF)
-                    )
-            image.setRGB(x, y, argb)
+        fun of(vararg files: File): Builder<File> {
+            return Builder.ofFiles(files.asIterable())
         }
     }
 
-    return image
+    class Builder<T>(val sources: Iterable<ImageSource<T>>) {
+        var width = 0
+        var height = 0
+
+        fun size(width: Int, height: Int): Builder<T> {
+            this.width = width
+            this.height = height
+
+            return this
+        }
+
+        fun makeParam(): ThumbnailParameter {
+            return ThumbnailParameter(Dimension(width, height))
+        }
+
+        class StringImageSourceIterator(val filenames: Iterable<String>) : Iterable<ImageSource<File>> {
+            override fun iterator(): MutableIterator<ImageSource<File>> {
+                return object : MutableIterator<ImageSource<File>> {
+                    var iter: Iterator<String> = filenames.iterator()
+
+                    override fun hasNext(): Boolean {
+                        return iter.hasNext()
+                    }
+
+                    override fun next(): ImageSource<File> {
+                        return FileImageSource(iter.next())
+                    }
+
+                    override fun remove() {
+                        throw UnsupportedOperationException()
+                    }
+                }
+            }
+        }
+
+        class FileImageSourceIterator(val filenames: Iterable<File>) : Iterable<ImageSource<File>> {
+            override fun iterator(): MutableIterator<ImageSource<File>> {
+                return object : MutableIterator<ImageSource<File>> {
+                    var iter: Iterator<File> = filenames.iterator()
+
+                    override fun hasNext(): Boolean {
+                        return iter.hasNext()
+                    }
+
+                    override fun next(): ImageSource<File> {
+                        return FileImageSource(iter.next())
+                    }
+
+                    override fun remove() {
+                        throw UnsupportedOperationException()
+                    }
+                }
+            }
+        }
+
+        fun asBufferedImage(): BufferedImage {
+            val iter = sources.iterator()
+            val source = iter.next()
+
+            require(!iter.hasNext()) { "Cannot create one thumbnail from multiple original images." }
+
+            val destination = BufferedImageSink()
+
+            Thumbnailator.createThumbnail(
+                SourceSinkThumbnailTask<T, BufferedImage>(makeParam(), source, destination)
+            )
+
+            return destination.getSink()
+        }
+
+        fun asBufferedImages(): List<BufferedImage> {
+            val thumbnails = ArrayList<BufferedImage>()
+
+            for (source in sources) {
+                val destination = BufferedImageSink()
+                Thumbnailator.createThumbnail(
+                    SourceSinkThumbnailTask<T, BufferedImage>(makeParam(), source, destination)
+                )
+                thumbnails.add(destination.getSink());
+            }
+
+            return thumbnails
+        }
+
+
+        companion object {
+            fun ofStrings(fileNames: Iterable<String>): Builder<File> {
+                val iter = StringImageSourceIterator(fileNames)
+                return Builder(iter)
+            }
+
+            fun ofFiles(files: Iterable<File>): Builder<File> {
+                val iter = FileImageSourceIterator(files)
+                return Builder(iter)
+            }
+        }
+    }
 }

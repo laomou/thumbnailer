@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    implementation("org.apache.commons:commons-imaging:1.0-alpha3")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0")
     testImplementation(kotlin("test"))
 }
 
